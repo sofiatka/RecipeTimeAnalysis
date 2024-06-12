@@ -63,6 +63,7 @@ Before beginning my analysis, I cleaned the data described earlier. The steps I 
     * I found that several columns, included `tags` and `nutrition`, were strings given in the form of lists. I created a helper function that would take a string formatted as a list and return an array of the same information in its correct type (e.g. float). This result became more interpretable to Python. Since the `nutrition` column had a consistent format for all recipes, I created another helper function that would add individual columns in the DataFrame for each piece of nutritional info, such as calorie count and sugar (PDV).
     * These steps faciliated future analyses in my project, turning nutritional data into floats and allowing me to individually assess nutritional aspects in relation to recipe time.
 5. Creating a categorical column called `length` to label each recipe as either *short* or *long*
+    * *Note that the details of this step are discussed further under univariate analysis. This section is only meant to summarize the changes I made overall during the cleaning process.*
     * This step allowed me to clearly label (my definition of) short and long recipes without having to repeatedly use the `minutes` column. By making this a separate column, I could save time for future analysis.
     * For the purposes of EDA, I felt it would be better to keep direct, string-type labels (i.e. "short" and "long"). This way, you can immediately understand the meaning from the value itself, not just the name of the column. However, I would later binarize this column (where `short==1` and `long==0`) using a `LabelTransformer` for my prediction problem.
 
@@ -98,6 +99,13 @@ The standard deviation and maximum value are extremely large. This indicated a h
   height="600"
   frameborder="0"
 ></iframe>
+
+I observed that a significant portion of recipes took less than 2 hours to complete. There are many decently short recipes, and a few extremely long ones (the longest recipe in the dataset takes over 1,000,000 minutes to complete!). Because of this outlier-induced right skew, I decided that my threshold to determine short and long recipes should be robust to outliers. Since the mean is heavily influenced by outliers, I decided to use the **median** instead, which I found to be **35 minutes**. In the context of daily life, I consider this threshold to be reasonable. If you only have an hour for lunch, you will likely not consider a recipe to be "short" if it takes over 35 minutes to complete. You still need time to eat and clean up, after all! For this reason, I decided to use the following threshold:
+* Short recipes: 35 or less minutes to complete
+* Long recipes: More than 35 minutes to complete
+This is the metric I used to create the `length` column described in Step 5 of my Data Cleaning. Performing univariate analysis on the `minutes` column allowed me to determine a reasonable threshold that I could use for the rest of the project.
+
+> *Note:* An additional benefit of using the median is its ability to evenly split data. This ensures that we can compare short vs. long recipes without worrying too much about drastically differing sample sizes and hence differing variations. Issues with class imbalance (a common problem in classification-type prediction) can also be reduced using this approach.
 
 ## Assessment of Missingness
 
