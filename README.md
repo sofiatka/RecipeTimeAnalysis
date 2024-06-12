@@ -280,10 +280,8 @@ My final model had the following characteristics:
     - Max depth: 30
     - Criterion: Entropy
 * Features:
-    - `n_steps`, a discrete quantitative feature
-        - Transformed via StandardScaler to put values in comparable range
-    - `n_ingredients`, a discrete quantitative feature
-        - Transformed via StandardScaler to put values in comparable range
+    - `n_steps`, a discrete quantitative feature (untransformed)
+    - `n_ingredients`, a discrete quantitative feature (untransformed)
     - `tags`, a custom-transformed, nominal categorical feature
         - Transformed via the custom-made transformer `HasTagTransformer`. It would transform the entire `tags` column into a nominal categorical feature. If a recipe had an "easy" tag, it would be transformed into the boolean `True` (1) and `False` (0) otherwise. Since boolean values are already numerical, it was not necessary to perform additional encoding.
     - `num_calories`, a quantile-transformed continuous quantitative feature
@@ -293,10 +291,10 @@ My final model had the following characteristics:
 
 ### Justification of Features
 #### `n_steps`
-From the Interesting Aggregates, I found that long recipes had about 3-4 more steps, on average, than short recipes. This implied that `n_steps` could be a good feature to distinguish a short recipe from a long one. I used a `StandardScaler` on this column to make the feature more interpretable and put values into comparable range with other features.
+From the Interesting Aggregates, I found that long recipes had about 3-4 more steps, on average, than short recipes. This implied that `n_steps` could be a good feature to distinguish a short recipe from a long one. I decided to *remove* the `StandardScaler` from this column in the final model because a RandomForestClassifier does not benefit much from scaling numerical parameters. Removing this transformation would alleviate the computational workload of my model.
 
 #### `n_ingredients`
-From my Bivariate Analysis, I found that there was a slight positive association between `n_steps` and `n_ingredients`. Logically, as number of ingredients increases, we would expect the recipe time to increase as well, since you need more time to prep all ingredients and incorporate them into a recipe. The *slight* association was good to avoid redundancy in the model and add nuance to edge cases. For example, in the event that a short recipe had many steps but few ingredients, the low number of ingredients could be used to reduce the influence of the high step count. In other words, adding this feature could help the model self-regulate. I also used a `StandardScaler` for this column to make the feature more interpretable and put its values into a comparable range with other features.
+From my Bivariate Analysis, I found that there was a slight positive association between `n_steps` and `n_ingredients`. Logically, as number of ingredients increases, we would expect the recipe time to increase as well, since you need more time to prep all ingredients and incorporate them into a recipe. The *slight* association was good to avoid redundancy in the model and add nuance to edge cases. For example, in the event that a short recipe had many steps but few ingredients, the low number of ingredients could be used to reduce the influence of the high step count. In other words, adding this feature could help the model self-regulate. For the same reasons as `n_steps`, I decided to *remove* the `StandardScaler` from this column in the final model because a RandomForestClassifier does not benefit much from scaling numerical parameters. Removing this transformation would alleviate the computational workload of my model.
 
 #### `tags`
 I was curious if recipes labeled as "easy" could be good predictors of a short recipe. I split my dataset into recipes that *did* include "easy" tags and recipes that *did not* include "easy" tags. Then, I created two bar plots to compare frequencies of long and short recipes within each subgroup. The results are shown below:
