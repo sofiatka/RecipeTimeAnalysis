@@ -123,7 +123,7 @@ One question I was curious about concerned the distribution of ratings condition
   frameborder="0"
 ></iframe>
 
-Short recipes (i.e. those taking 35 minutes or less) seem to get 5-star ratings more often than long recipes (78% v.s. 76.6%). Long recipes seem more likely than short recipes to have 4 or less stars. The difference does not appear to be very large, but it is noticeable and has a consistent pattern. It seems reasonable to hypothesize that short recipes *could* receive fundamentally different ratings compared to long ones.
+The most common rating in either group is overwhelmingly 5 stars, followed chronologically by all other ratings. Short recipes (i.e. those taking 35 minutes or less) seem to get 5-star ratings more often than long recipes (78% v.s. 76.6%). Long recipes seem more likely than short recipes to have 4 or less stars. The difference does not appear to be very large, but it is noticeable and has a consistent pattern. It seems reasonable to hypothesize that short recipes *could* receive fundamentally different ratings compared to long ones.
 
 #### Calories, Conditional on Recipe Length
 I also examined how the distribution of calories differed across short and long recipes. Since calories are a continuous quantitative variable, I used an overlaid histogram to perform this bivariate analysis.
@@ -151,7 +151,67 @@ As predicted, there is an overall upward trend. Recipes with more steps tend to 
 
 > Ingredient and step counts do not appear to be closely correlated, which can be useful in the future for building a classification model. As features, `n_steps` and `n_ingredients` are semantically related to recipe length, but are not so correlated with each other to produce multicollinearity. This will avoid redundancy in the model.
 
+### Interesting Aggregates
+I created a pivot table to compare average step counts (`n_step`) for each rating-length pair. For example, we can observe that there were *8.59 steps* on average in *short* recipes that received *1-star* reviews.
+
+|   rating |    long |   short |
+|---------:|--------:|--------:|
+|        1 | 12.4263 | 8.58749 |
+|        2 | 12.5775 | 8.54529 |
+|        3 | 11.8613 | 8.02546 |
+|        4 | 11.5324 | 7.80751 |
+|        5 | 12.3652 | 7.89932 |
+
+There are some interesting trends in this table. First, we can observe that no matter the rating, long recipes consistently have 3-4 steps more than short recipes, on average. Within both groups, we can observe an (overall) decreasing trend in average step count as rating increases from 1 to 4 stars. This could suggest that people are more likely to review a recipe favorably if it has less steps. This trend reverses for a rating of 5, where there is a sudden increase in the average step count. Earlier, we learned that 5 is the most common rating within both long and short recipe groups. This implies that some recipes with large step counts were reviewed very favorably by users. If we examine the aggregates closer, we can observe that the jump in average step count from 4 to 5 stars is larger in long recipes than short ones. Some particularly long recipes (in terms of step count) may be reviewed quite favorably despite how long they are!
+
+**Takeaway:** While there is a slight decreasing trend in step count as rating increases, this does not necessarily imply that all good recipes must have low step counts.
+
 ## Assessment of Missingness
+Columns that have substantial amounts of missing data are `description`, `rating` and `review`. I performed a missingness analysis to better understand why this data could be missing.
+
+### NMAR Analysis
+By definition, data in a column that is **not missing at random (NMAR)** is missing values in a way that depends on the values of the column itself. The missingness of the `description` column could potentially be NMAR. Since recipe descriptions are user-submitted, it is possible that the author simply opted not to provide a recipe description. Since virtually all recipes have names (and tags, provided by Food.com), some authors may have felt this information was enough and thus did not provide additional information in the description. For this reason, we may not be able to discern missingness using other columns in the dataset, and instead can only reason about why a user would omit the description in its own context. If we wanted to evaluate the data for being missing at random (MAR), we might consider if the user submitting the recipe is the recipe's original author. Perhaps people who upload recipes without a description are more likely to be re-uploading other people's recipes. Since the recipe is not their own, they may care less about providing an adequate description of the recipe. However, this would require additional data collection and testing. For now, we can only speculate about the missingness of this column.
+
+### Missingness Dependency
+Next, I analyzed the missingness of a different column: `ratings`. About 6% of all ratings are missing in the merged DataFrame. I performed a missingness dependency analysis, where I examined if ratings were **missing at random (MAR)** based on values in another column.
+
+#### Dependency on `length` Column
+First, I considered dependency on the `length` column, which labels recipes as either *short* or *long*. Recall that this column is directly derived from the `minutes` column, where the threshold is the median, 35 minutes. I used a permutation test to evaluate two hypotheses:
+* **Null Hypothesis:** The missingness of `rating` **does not** depend on the binary `length` of a recipe.
+* **Alternative Hypothesis:** The missingness of `rating` **does** depend on the binary `length` of a recipe.
+* **Test Statistic:** Absolute Difference in Proportions of Long Recipes in the distribution of missing ratings and the distribution of non-missing ratings
+* **Significance Level:** 0.05
+
+> Note that we can use an absolute difference in proportions (instead of, say, Total Variation Distance) because we only have 2 categories of recipe lengths: *short* and *long*.
+
+<iframe
+  src="assets/missing_length.html"
+  width="800"
+  height="600"
+  frameborder="0"
+></iframe>
+
+We reject the null hypothesis because our p-value was 0.0 < 0.05. The observed absolute difference in proportions was about 0.08, or 8%. There is evidence to suggest that `rating` could be missing at random (MAR), dependent on the binary `length` column.
+
+> Recall that the dataset has almost 230,000 rows. Because our sample size is very large, the test is more sensitive to small differences. This rationalizes the extreme p-value. Regardless, it is possible that missingness of `rating` can be predicted (to a degree) by the binary length of a recipe.
+
+#### Dependency on `minutes` Column
+Can we use raw `minutes` data to explain missingness in rating as well as we can explain it with recipe `length` data? Since `minutes` is quantitative, I built the test statistic using the average length of a recipe, in minutes. As before, I used a permutation test to evaluate two hypotheses:
+* **Null Hypothesis:** The missingness of `rating` **does not** depend on the continuous `minutes` column.
+* **Alternative Hypothesis:** The missingness of `rating` **does** depend on the continuous `minutes` column.
+* **Test Statistic:** Absolute Difference in Means in the distribution of missing ratings and the distribution of non-missing ratings
+* **Significance Level:** 0.05
+
+<iframe
+  src="assets/missing_minutes.html"
+  width="800"
+  height="600"
+  frameborder="0"
+></iframe>
+
+This time, we did not find a significant result. The p-value of this test was 0.122 > 0.05. We fail to reject our null hypothesis, and we cannot conclude from this test alone whether `rating` is missing at random (MAR) dependent on the continuous `minutes` column.
+
+> This conclusion can only be made in the context of the test statistic used. Recall that the `minutes` data is highly right skewed and continuous, whereas `length` data is categorical and relatively balanced. Even though `length` is a column directly derived from `minutes`, we can come to opposing conclusions based on the test we make. For instance, using the absolute difference in means for `minutes` did not lead to a significant result. Perhaps there is a different test, one that takes into account the skewness of the `minutes` data, that could better communicate MAR dependence. Within the constraints of the above test, however, we were unable to find strong evidence in favor of MAR dependence on the `minutes` column.
 
 ## Hypothesis Testing
 
