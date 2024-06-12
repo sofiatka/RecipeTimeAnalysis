@@ -214,6 +214,28 @@ This time, we did not find a significant result. The p-value of this test was 0.
 > This conclusion can only be made in the context of the test statistic used. Recall that the `minutes` data is highly right skewed and continuous, whereas `length` data is categorical and relatively balanced. Even though `length` is a column directly derived from `minutes`, we can come to opposing conclusions based on the test we make. For instance, using the absolute difference in means for `minutes` did not lead to a significant result. Perhaps there is a different test, one that takes into account the skewness of the `minutes` data, that could better communicate MAR dependence. Within the constraints of the above test, however, we were unable to find strong evidence in favor of MAR dependence on the `minutes` column.
 
 ## Hypothesis Testing
+During my bivariate analysis, I compared the rating distribution of long and short recipes. I observed that a 5-star rating was (slightly) more likely to occur for short recipes than for long ones, and that lower star ratings were more likely to occur for long recipes. To examine if the rating distributions of long and short recipes came from the same distribution, I performed a permutation test.
+* **Null Hypothesis:** The distributions of ratings for short and long recipes are the same.
+* **Alternative Hypothesis:** The distributions of ratings for short and long recipes are not the same.
+* **Test Statistic:** Total Variation Distance (TVD)
+* **Significance Level:** 0.05
+
+My justification to use this test is as follows:
+1. I decided to use a permutation test because I am comparing two subgroups&mdash;long and short recipes&mdash;to each other in terms of rating distribution. I am not relating either to a general population, which would warrant the use of a standard hypothesis test. Because I do not know the distribution from which either subgroup's data was sourced, I could use a permutation test to assess if their data could be from the same (unknown) distribution.
+2. Though ratings can be interpreted as discrete quantitative variables, we can also interpret them to be ordinal categorical (since there are only 5 of them). This warrants the use of proportions to quantify the frequency of various ratings per group.
+3. Since I am comparing two categorical distributions (where each rating has a frequency proportion), it makes sense to use Total Variation Distance (TVD) as a test statistic. Furthermore, my test is two-sided and requires a test statistic that captures deviations in either direction. This further reinforces the use of the TVD.
+
+Because the test uses the TVD, we cannot necessarily conclude *which* type of recipe is more likely to receive higher or lower ratings. We can only conclude that short and long recipes could have fundamentally different ratings. The results of the outlined test are shown below:
+<iframe
+  src="assets/hypothesis.html"
+  width="800"
+  height="600"
+  frameborder="0"
+></iframe>
+
+The observed statistic, 0.014, is significant, with a p-value of 0.0 < 0.05. We reject the null hypothesis and have evidence that the distributions of ratings for short and long recipes are not the same.
+
+> **Important:** We cannot *definitively* conclude that short and long recipes receive different ratings. Furthermore, the observed TVD is quite small. Because our sample size is so large (at almost 230,000 reviews), the test becomes sensitive to small differences and is more likely to reject a null hypothesis of this sort. Even though our test result was significant, it is unlikely that short recipes are reviewed ***noticeably*** differently from long recipes. Therefore, ratings may not necessarily help us distinguish a short recipe from a long one.
 
 ## Framing a Prediction Problem
 
