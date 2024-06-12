@@ -100,12 +100,43 @@ The standard deviation and maximum value are extremely large. This indicated a h
   frameborder="0"
 ></iframe>
 
-I observed that a significant portion of recipes took less than 2 hours to complete. There are many decently short recipes, and a few extremely long ones (the longest recipe in the dataset takes over 1,000,000 minutes to complete!). Because of this outlier-induced right skew, I decided that my threshold to determine short and long recipes should be robust to outliers. Since the mean is heavily influenced by outliers, I decided to use the **median** instead, which I found to be **35 minutes**. In the context of daily life, I consider this threshold to be reasonable. If you only have an hour for lunch, you will likely not consider a recipe to be "short" if it takes over 35 minutes to complete. You still need time to eat and clean up, after all! For this reason, I decided to use the following threshold:
+I observed that a significant portion of recipes took less than 2 hours to complete. The most common recipe length was between 30-40 minutes. There are many decently short recipes, and a few extremely long ones (the longest recipe in the dataset, which isn't captured in the reduced histogram, takes over 1,000,000 minutes to complete!).
+
+Because of this outlier-induced right skew, I decided that my threshold to determine short and long recipes should be robust to outliers. Since the mean is heavily influenced by outliers, I decided to use the **median** instead, which I found to be **35 minutes**. In the context of daily life, I consider this threshold to be reasonable. If you only have an hour for lunch, you will likely not consider a recipe to be "short" if it takes over 35 minutes to complete. You still need time to eat and clean up, after all! For this reason, I decided to use the following threshold:
+
 * Short recipes: 35 or less minutes to complete
 * Long recipes: More than 35 minutes to complete
+
 This is the metric I used to create the `length` column described in Step 5 of my Data Cleaning. Performing univariate analysis on the `minutes` column allowed me to determine a reasonable threshold that I could use for the rest of the project.
 
-> *Note:* An additional benefit of using the median is its ability to evenly split data. This ensures that we can compare short vs. long recipes without worrying too much about drastically differing sample sizes and hence differing variations. Issues with class imbalance (a common problem in classification-type prediction) can also be reduced using this approach.
+> *Note:* An additional benefit of using the median is its ability to evenly split data. This ensures that we can compare short vs. long recipes without worrying too much about drastically differing sample sizes and hence differing variations. Issues with class imbalance (a common problem in classification) can also be reduced using this approach.
+
+
+### Bivariate Analysis
+
+#### Rating, Conditional on Recipe Length
+One question I was curious about concerned the distribution of ratings conditional on recipe length. Do people enjoy short recipes more than long ones? Are they more likely to give a 5-star review to a short recipe or a long one? To examine this relationship, I treated the `rating` column as an ordinal categorical feature and constructed a grouped bar plot, conditional on the `length` column I engineered earlier.
+<iframe
+  src="assets/rating_cond_bar.html"
+  width="800"
+  height="600"
+  frameborder="0"
+></iframe>
+
+Short recipes (i.e. those taking 35 minutes or less) seem to get 5-star ratings more often than long recipes (78% v.s. 76.6%). Long recipes seem more likely than short recipes to have 4 or less stars. The difference does not appear to be very large, but it is noticeable and has a consistent pattern. It seems reasonable to hypothesize that short recipes *could* receive fundamentally different ratings compared to long ones.
+
+#### Calories, Conditional on Recipe Length
+I also examined how the distribution of calories differed across short and long recipes. Since calories are a continuous quantitative variable, I used an overlaid histogram to perform this bivariate analysis.
+<iframe
+  src="assets/calorie_hist.html"
+  width="800"
+  height="600"
+  frameborder="0"
+></iframe>
+
+The shapes of the calorie distributions are similar, but the histogram of long recipes is significantly shorter in height than the histogram for short recipes. Since there is a rough 50-50 split between short and long recipes, we would expect the histograms overlap more if there were no difference in calories by group. Because the heights are so different, this suggests that long recipes may actually have ***higher*** calorie counts than short recipes. Long recipes may be more likely to have recipes with higher calorie counts that would drag the right tail further out (into more extreme outliers) than for short recipes.
+
+Indeed, using an aggregation technique, we find that (unique) long recipes have **509 calories on average** versus only **353 calories on average** for short recipes. This is useful to know if we wish to distinguish long recipes from short ones.
 
 ## Assessment of Missingness
 
