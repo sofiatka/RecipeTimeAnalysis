@@ -76,6 +76,28 @@ My cleaned DataFrame had 234429 rows and 25 columns after the above changes. The
 | 412 broccoli casserole               |      306168 |        40 |            50969 | 2008-05-30  | ['60-minutes-or-less', 'time-to-make', 'course', 'main-ingredient', 'preparation', 'side-dishes', 'vegetables', 'easy', 'beginner-cook', 'broccoli']                                                                        |         6 |               9 |      1.19628e+06 | 2009-04-13 |        5 |            5 |          194.8 |          20 |       6 |       32 |        22 |              36 |               3 | long     |
 | 412 broccoli casserole               |      306168 |        40 |            50969 | 2008-05-30  | ['60-minutes-or-less', 'time-to-make', 'course', 'main-ingredient', 'preparation', 'side-dishes', 'vegetables', 'easy', 'beginner-cook', 'broccoli']                                                                        |         6 |               9 | 768828           | 2013-08-02 |        5 |            5 |          194.8 |          20 |       6 |       32 |        22 |              36 |               3 | long     |
 
+### Univariate Analysis
+
+I explored the distribution of various columns in my cleaned DataFrame. Most importantly, I analyzed the distribution of the `minutes` column to decide the threshold I should use to distinguish short recipes from long ones. To do this, I examined the distribution of `minutes`. First, I removed duplicate recipes that came as a result of using merge. This would allow me to see the distribution of `minutes` in reference to unique recipes. Then, I used the `describe()` function on the column to get a summary of statistics. The summary is shown below:
+| Statistic   |        Minutes |
+|:------------|---------------:|
+| count       | 83782          |
+| mean        |   115.031      |
+| std         |  3990.87       |
+| min         |     0          |
+| 25%         |    20          |
+| 50%         |    35          |
+| 75%         |    65          |
+| max         |     1.0512e+06 |
+
+The standard deviation and maximum value are extremely large. This indicated a heavy right skew in my data, which I confirmed after plotting my first histogram of the `minutes` column. The vast majority of recipes appeared to fall within 2 hours, so I restricted my plot to only include recipes that took 5 or less hours (i.e. 300 minutes). This allowed me to see clearer trends in the data, since so few recipes fell under the extreme spectrum of the right tail. The modified histogram of the `minutes` column is shown below.
+<iframe
+  src="assets/minutes_hist.html"
+  width="800"
+  height="600"
+  frameborder="0"
+></iframe>
+
 ## Assessment of Missingness
 
 ## Hypothesis Testing
