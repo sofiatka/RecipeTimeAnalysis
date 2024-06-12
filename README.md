@@ -256,21 +256,92 @@ Because of this, **precision** is a good metric to optimize our model for. Aimin
 > **Important:** The data was split 75:25 into train and test data, respectively. All models used the same training and test data to assure a consistent analysis of results.
 
 ## Baseline Model
-As stated earlier, a RandomForestClassifier was used to fit the baseline model. The baseline model had the following characteristics:
+As stated earlier, a RandomForestClassifier was used to fit the baseline model. My baseline model had the following characteristics:
 * Hyperparameters:
     - Number of estimators: 100
     - Max depth: 20
+    - Criterion: Gini (default)
 * Features:
-    - `n_steps`, a discrete quantitative variable
-    - `n_ingredients`, a discrete quantitative variable
+    - `n_steps`, a discrete quantitative feature
+        - Transformed via StandardScaler to put values in comparable range
+    - `n_ingredients`, a discrete quantitative feature (untransformed)
+        - Transformed via StandardScaler to put values in comparable range
 
-**Note:** No changes were made to either of these features in the baseline model. Because none of the current features are categorical, no encoding was necessary at this juncture.
+**Note:** Because none of the current features are categorical, no encoding was necessary at this juncture.
 
 First, I used 5-fold cross validation on my training data using the stated hyperparameters and features in a RandomForestClassifier. Then, I assessed my model on the test data. The **precision** metric was **0.68** on average for the cross-validated training data, and **0.68** again for the test data. The accuracy was roughly **0.67** on both validation and test data.
 
 This model was not too bad for a baseline model. At worst, we would expect an accuracy of about 0.52 if the model were predicting the most common recipe length category. However, the accuracy was about 15% higher, which means that, to an extent, `n_steps` and `n_ingredients` provide decent insight into the length of a recipe. Improvements were definitely needed, however, since the precision (and accuracy) were still too low to be effective in a real-life setting.
 
 ## Final Model
+My final model had the following characteristics:
+* Hyperparameters:
+    - Number of estimators: 120
+    - Max depth: 30
+    - Criterion: Entropy
+* Features:
+    - `n_steps`, a discrete quantitative feature
+        - Transformed via StandardScaler to put values in comparable range
+    - `n_ingredients`, a discrete quantitative feature
+        - Transformed via StandardScaler to put values in comparable range
+    - `tags`, a custom-transformed, nominal categorical feature
+        - Transformed via the custom-made transformer `HasTagTransformer`. It would transform the entire `tags` column into a nominal categorical feature. If a recipe had an "easy" tag, it would be transformed into the boolean `True` (1) and `False` (0) otherwise. Since boolean values are already numerical, it was not necessary to perform additional encoding.
+    - `num_calories`, a quantile-transformed continuous quantitative feature
+        - Transformed via the `QuantileTransformer` with the distribution set to "normal"
+    - `sugar`, a quantile-transformed continuous quantitative feature
+        - Transformed via the `QuantileTransformer` with the distribution set to "normal"
+
+### Justification of Features
+#### `n_steps`
+From the Interesting Aggregates, I found that long recipes had about 3-4 more steps, on average, than short recipes. This implied that `n_steps` could be a good feature to distinguish a short recipe from a long one. I used a `StandardScaler` on this column to make the feature more interpretable and put values into comparable range with other features.
+
+#### `n_ingredients`
+From my Bivariate Analysis, I found that there was a slight positive association between `n_steps` and `n_ingredients`. Logically, as number of ingredients increases, we would expect the recipe time to increase as well, since you need more time to prep all ingredients and incorporate them into a recipe. The *slight* association was good to avoid redundancy in the model and add nuance to edge cases. For example, in the event that a short recipe had many steps but few ingredients, the low number of ingredients could be used to reduce the influence of the high step count. In other words, adding this feature could help the model self-regulate. I also used a `StandardScaler` for this column to make the feature more interpretable and put its values into a comparable range with other features.
+
+#### `tags`
+I was curious if recipes labeled as "easy" could be good predictors of a short recipe. I split my dataset into recipes that *did* include "easy" tags and recipes that *did not* include "easy" tags. Then, I created two bar plots to compare frequencies of long and short recipes within each subgroup. The results are shown below:
+<iframe
+  src="assets/easy_bar.html"
+  width="800"
+  height="600"
+  frameborder="0"
+></iframe>
+
+<iframe
+  src="assets/noteasy_bar.html"
+  width="800"
+  height="600"
+  frameborder="0"
+></iframe>
+
+The plots suggested that easy recipes were more likely to be short (about 60% of the time) and that non-easy recipes were more likely to be long (also about 60% of the time). This indicated to me that a recipe being "easy" could be a good predictor of a short recipe. Similarly, a recipe without an "easy" tag could be a good predictor of a long recipe. I created a custom transformer `HasTagTransformer` that checked the `tag` column for the "easy" keyword specifically. The output was a nominal categorical feature in the form of a Boolean.
+
+#### `num_calories` and `sugar` 
+The justification for these features is similar in nature, so they will be discussed under the same header. From my Bivariate Analysis, I plotted two overlaid histograms of the calorie distributions for short and long recipes. I found that the shape of the distributions was different, with long recipes having a tendency to have more extreme calorie counts than short ones. This indicated that I could use calorie counts to distinguish a short recipe from a long one. Because the data was right-skewed, I decided to use a `QuantileTransformer` to adjust the distribution of values closer to a normal distribution. Higher quantiles of calories would likely correspond to longer recipes, and lower quantiles of calories would likely correspond to shorter recipes.
+
+The same procedure was done for the `sugar` column of the dataset. I approached this issue from the perspective of baked goods. Baked goods tend to have a lot more preparation involved, and often need time to stay in the oven, which you have little control over in terms of time. Baked goods also have higher sugar content compared to other foods, so a higher sugar content could indicate the recipe needs longer preparation. Indeed, the overlaid histogram I made confirmed a similar trend as with calories:
+<iframe
+  src="assets/sugar_hist.html"
+  width="800"
+  height="600"
+  frameborder="0"
+></iframe>
+
+Due to the difference in heights of the distributions, it appears that long recipes have more severe sugar outliers than short recipes. For the same reasons as `num_calories`, I used a `QuantileTransformer` on the `sugar` column. This would help control the right skew of the data. Ultimately, it seems that `sugar` is another feature you could use to distinguish between short and long recipes, which is why I included it and `num_calories` as features.
+
+### Model Tuning
+I used the `GridSearchCV` to tune a set of hyperparameters with **5 folds** for cross-validation. I tested the following:
+* Number of Estimators: 100, 120, 140, 160
+* Max Depth: 20, 30, 40, 50, 60
+* Criterion: Gini, Entropy
+
+The ideal parameters were not always consistent, and I found that the accuracy and precision plateaued at about 90% with most sets of hyperparameters. I decided to use the output of the first Grid Search, which found **120 estimators, max depth of 30, and entropy** to be the ideal hyperparameters.
+- Increasing the number of estimators would decrease my model's variance and not necessarily affect my model's bias. Because of the precision plateau, 120 estimators is a good compromise to reduce the computational strain of my model while reducing model variance.
+- The ideal max depth was found to be 30 by Grid Search. The maximum tree depth is closely tied to over- (and under-)fitting a model. Going too high would increase risk of overfitting, so 30 was a good compromise due to the precision plateau. Getting unnecessarily large in terms of max depth with little benefit for precision would be counterintuitive for our model (and increase computational demand, too).
+- Entropy was chosen as the ideal hyperparameter. This is a more expensive computation than the Gini impurity, but entropy is generally better at determining splits in a tree than Gini. Because Grid Search found lesser values for estimator counts and max depth to be ideal, the increase in computation is counteracted by the other, less demanding hyperparameters.
+
+### Model Improvement
+The final model had a **precision** of over **0.92** on the test set after the best hyperparameters were applied. The sub-metric, accuracy, increased to 0.91 as well. This was a significant improvement of **well over 20%** in terms of model precision *and* accuracy. This indicates that the new features, especially the transformed `num_calories` and `sugar` data, were extremely informative in distinguishing long recipes from short ones. The high precision is reassuring as well, since the model has less than a 10% chance to predict a long (0) recipe as a short (1) one. The high accuracy indicates that the model is good at predicting recipe length labels *in general*, so short recipes are unlikely to be misclassified as long, either. We would of course need to consider recall specifically to analyze false negative rate, but in the context of our balanced dataset, accuracy is a good holistic measure of both true positives and true negatives in the model.
 
 
 ## Fairness Analysis
