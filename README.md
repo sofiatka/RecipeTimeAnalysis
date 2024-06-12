@@ -238,6 +238,20 @@ The observed statistic, 0.014, is significant, with a p-value of 0.0 < 0.05. We 
 > **Important:** We cannot *definitively* conclude that short and long recipes receive different ratings. Furthermore, the observed TVD is quite small. Because our sample size is so large (at almost 230,000 reviews), the test becomes sensitive to small differences and is more likely to reject a null hypothesis of this sort. Even though our test result was significant, it is unlikely that short recipes are reviewed ***noticeably*** differently from long recipes. Therefore, ratings may not necessarily help us distinguish a short recipe from a long one.
 
 ## Framing a Prediction Problem
+I decided to make a model to predict whether a recipe will be *short* (35 minutes or less) or *long* (more than 35 minutes), as described in the `length` column of the DataFrame. 
+* This is a **binary classification** model that will predict 1 for a recipe it thinks is short, and 0 otherwise. 
+* The **response variable** will be the binary `length` of a recipe.
+* The **main metric** used will be **precision**, though accuracy will be commented on, as well.
+    * Because I used the median, 35 minutes, to split recipes into *short* and *long* groups, I have minimized the risk of class imbalance. In fact, there is about a 48-52 split between long and short recipes, respectively, in the merged dataset. This will discourage artifically high accuracies if the classifier is only guessing the most common recipe length group (short). For this reason, it may be beneficial to consider accuracy in addition to precision, *which will be discussed in much further detail in the Context below*.
+
+### Context: Why use Precision?
+When applying this project to real life, it is important to weigh the risks of mislabeling a certain length of recipe. Consider the 1-hour lunch example from the beginning.
+* If this model predicts a short (1) recipe will be long (0), it will have produced a *false negative*. This is arguably not a big deal if you are deciding what recipe you will have time to make: you will simply avoid that recipe and find a new one, thus not wasting any of your time.
+* If this model predicts a long (0) recipe will be short (1), it will have produced a *false positive*. This is a lot more problematic than a false negative, because if you choose to start making a long recipe with less than 30 minutes to spare, you may not have time to eat, clean up, or even finish cooking in the first place, leaving a mess in the kitchen.
+
+Because of this, **precision** is a good metric to optimize our model for. Aiming for high precision will minimize the rate of false positives, which is exactly what we want to avoid in our model. However, if time is not so important, we want to make sure we're labeling short recipes accurately, too. For this reason, accuracy will be used as a sub-metric to assure our model is correctly identifying recipes in general. Recall that class imbalance is not a major issue in this dataset, so a high accuracy will indicate that we're identifying large numbers of true positives (short recipes) *and* negatives (long recipes).
+
+> The reason I am using 1 to represent a short recipe is due to the subtext of my project. Suppose you are using this model to decide what recipe to try with a limited amount of time. A "positive" will represent a recipe you *could* finish in a given period of time (which is fixed at 35 minutes in this project). A "negative" will mean that this recipe is not suitable for the limited time you have.
 
 ## Baseline Model
 
