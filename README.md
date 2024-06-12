@@ -253,7 +253,7 @@ Because of this, **precision** is a good metric to optimize our model for. Aimin
 
 > The reason I am using 1 to represent a short recipe is due to the subtext of my project. Suppose you are using this model to decide what recipe to try with a limited amount of time. A "positive" will represent a recipe you *could* finish in a given period of time (which is fixed at 35 minutes in this project). A "negative" will mean that this recipe is not suitable for the limited time you have.
 
-> **Important:** The data was split 75:25 into train and test data, respectively. All models used the same training and test data to assure a consistent analysis of results. Additionally, the response column, `length`, was transformed via default hyperparameters of the `LabelEncoder` prior to any train-test split. This is where the mapping `long => 0` and `short => 1` appears in the model.
+> **Important:** The data was split 75:25 into train and test data, respectively. All models used the same training and test data to assure a consistent analysis of results. Additionally, the response column `length` was transformed via default hyperparameters of the `LabelEncoder` prior to any train-test split. This is where the mapping `long => 0` and `short => 1` appears in the model.
 
 ## Baseline Model
 As stated earlier, a RandomForestClassifier was used to fit the baseline model. My baseline model had the following characteristics:
@@ -291,10 +291,10 @@ My final model had the following characteristics:
 
 ### Justification of Features
 #### `n_steps`
-From the Interesting Aggregates, I found that long recipes had about 3-4 more steps, on average, than short recipes. This implied that `n_steps` could be a good feature to distinguish a short recipe from a long one. I decided to *remove* the `StandardScaler` from this column in the final model because a RandomForestClassifier does not benefit much from scaling numerical parameters. Removing this transformation would alleviate the computational workload of my model.
+From the Interesting Aggregates, I found that long recipes had about 3-4 more steps, on average, than short recipes. This implied that `n_steps` could be a good feature to distinguish a short recipe from a long one. I decided to *remove* the `StandardScaler` from this column in the final model because a RandomForestClassifier does not benefit much from scaling numerical features. Removing this transformation would alleviate the computational workload of my model and not compromise precision or accuracy.
 
 #### `n_ingredients`
-From my Bivariate Analysis, I found that there was a slight positive association between `n_steps` and `n_ingredients`. Logically, as number of ingredients increases, we would expect the recipe time to increase as well, since you need more time to prep all ingredients and incorporate them into a recipe. The *slight* association was good to avoid redundancy in the model and add nuance to edge cases. For example, in the event that a short recipe had many steps but few ingredients, the low number of ingredients could be used to reduce the influence of the high step count. In other words, adding this feature could help the model self-regulate. For the same reasons as `n_steps`, I decided to *remove* the `StandardScaler` from this column in the final model because a RandomForestClassifier does not benefit much from scaling numerical parameters. Removing this transformation would alleviate the computational workload of my model.
+From my Bivariate Analysis, I found that there was a slight positive association between `n_steps` and `n_ingredients`. Logically, as number of ingredients increases, we would expect the recipe time to increase as well, since you need more time to prep all ingredients and incorporate them into a recipe. The *slight* association was good to avoid redundancy in the model and add nuance to edge cases. For example, in the event that a short recipe had many steps but few ingredients, the low number of ingredients could be used to reduce the influence of the high step count. In other words, adding this feature could help the model self-regulate. For the same reasons as `n_steps`, I decided to *remove* the `StandardScaler` from this column in the final model because a RandomForestClassifier does not benefit much from scaling numerical features. Removing this transformation would alleviate the computational workload of my model and not compromise precision or accuracy.
 
 #### `tags`
 I was curious if recipes labeled as "easy" could be good predictors of a short recipe. I split my dataset into recipes that *did* include "easy" tags and recipes that *did not* include "easy" tags. Then, I created two bar plots to compare frequencies of long and short recipes within each subgroup. The results are shown below:
@@ -343,3 +343,20 @@ The final model had a **precision** of over **0.92** on the test set after the b
 
 
 ## Fairness Analysis
+To analyze the fairness of my model, I analyzed subgroups within the `n_steps` column of my data. Specifically, I compared the **precision** of my final model on recipes that had 9 or less steps with recipes that had more than 9 steps.
+
+* **Null Hypothesis:** Our model is fair. Its precision for recipes with more than 9 steps and recipes with 9 steps or less are roughly the same, and any differences are due to random chance.
+* **Alternative Hypothesis:** Our model is unfair. Its precision for recipes with more than 9 steps is lower than its precision for recipes with 9 steps or less.
+* **Test Statistic:** Difference in Precision (More than 9 Steps - 9 Steps or Less)
+* **Significance Level:** 0.05
+
+<iframe
+  src="assets/precision.html"
+  width="800"
+  height="600"
+  frameborder="0"
+></iframe>
+
+I used a `Binarizer` with a threshold of 9 to create a new column `steps_over_9`. The difference in precision was observed to be -0.019 across groups, which means that we observed 2% less precision in the model for recipes with more than 9 steps compared to recipes with 9 steps or less. The result, as seen above, was significant with a p-value of 0.0 < 0.05. We reject the null hypothesis that our model is fair. There is evidence to suggest that our model's precision is lower for recipes that have more than 9 steps.
+
+> It seems that `n_steps` is not a perfect proxy for the (time-wise) length of a recipe. A high step count may not necessarily indicate a longer recipe. This can be explained by considering the steps themselves. Often, we cannot understand the time of each *individual* step. One step can be extremely simple, like transferring all dry ingredients into a bowl. Another step may be significantly more time consuming, like waiting for your dough to rise (a process that often takes several hours). The number of steps is a limited measure of how long a recipe may take, which is why precision may suffer as `n_steps` reaches a certain level. At a point, certain step counts become ambiguous: are the 9 steps in my recipe short, easy steps, or are they long, time consuming steps? The above test helps quantify the ambiguity of this feature through the lens of fairness.
