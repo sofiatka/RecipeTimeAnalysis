@@ -79,6 +79,7 @@ My cleaned DataFrame had 234429 rows and 25 columns after the above changes. The
 ### Univariate Analysis
 
 I explored the distribution of various columns in my cleaned DataFrame. Most importantly, I analyzed the distribution of the `minutes` column to decide the threshold I should use to distinguish short recipes from long ones. To do this, I examined the distribution of `minutes`. First, I removed duplicate recipes that came as a result of using merge. This would allow me to see the distribution of `minutes` in reference to unique recipes. Then, I used the `describe()` function on the column to get a summary of statistics. The summary is shown below:
+
 | Statistic   |        Minutes |
 |:------------|---------------:|
 | count       | 83782          |
