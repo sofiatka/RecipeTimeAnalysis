@@ -109,7 +109,7 @@ Because of this outlier-induced right skew, I decided that my threshold to deter
 
 This is the metric I used to create the `length` column described in Step 5 of my Data Cleaning. Performing univariate analysis on the `minutes` column allowed me to determine a reasonable threshold that I could use for the rest of the project.
 
-> *Note:* An additional benefit of using the median is its ability to evenly split data. This ensures that we can compare short vs. long recipes without worrying too much about drastically differing sample sizes and hence differing variations. Issues with class imbalance (a common problem in classification) can also be reduced using this approach.
+> An additional benefit of using the median is its ability to evenly split data. This ensures that we can compare short vs. long recipes without worrying too much about drastically differing sample sizes and hence differing variations. Issues with class imbalance (a common problem in classification) can also be reduced using this approach.
 
 
 ### Bivariate Analysis
@@ -134,9 +134,22 @@ I also examined how the distribution of calories differed across short and long 
   frameborder="0"
 ></iframe>
 
-The shapes of the calorie distributions are similar, but the histogram of long recipes is significantly shorter in height than the histogram for short recipes. Since there is a rough 50-50 split between short and long recipes, we would expect the histograms overlap more if there were no difference in calories by group. Because the heights are so different, this suggests that long recipes may actually have ***higher*** calorie counts than short recipes. Long recipes may be more likely to have recipes with higher calorie counts that would drag the right tail further out (into more extreme outliers) than for short recipes.
+The shapes of the calorie distributions are similar, but the histogram of long recipes is significantly shorter in height than the histogram for short recipes. Since there is a rough 50-50 split between short and long recipes, we would expect the histograms to overlap more if there were no difference in calories by group. Because the heights are so different, this suggests that long recipes may actually have ***higher*** calorie counts than short recipes. Long recipes may have recipes with higher calorie counts that would skew the mean more than in short recipes.
 
 Indeed, using an aggregation technique, we find that (unique) long recipes have **509 calories on average** versus only **353 calories on average** for short recipes. This is useful to know if we wish to distinguish long recipes from short ones.
+
+#### Relationship between Ingredient and Step Counts
+There are other ways to describe recipe length than simply using time to completion. Two such variables are `n_ingredients` (number of ingredients in a recipe) and `n_steps` (number of steps in a recipe). Since these are quantitative variables, we can compare them in a scatterplot to see if there exists an association. Logically, we would expect a positive association: if you have more ingredients, you may need more steps to properly incorporate them into a recipe.
+<iframe
+  src="assets/ing_step_scat.html"
+  width="800"
+  height="600"
+  frameborder="0"
+></iframe>
+
+As predicted, there is an overall upward trend. Recipes with more steps tend to use more ingredients. However, the association does not appear to be very strong; there is a lot of variation across ingredient-step count pairs. Note that we are using only unique recipes from the dataset, so each point corresponds to a distinct recipe.
+
+> Ingredient and step counts do not appear to be closely correlated, which can be useful in the future for building a classification model. As features, `n_steps` and `n_ingredients` are semantically related to recipe length, but are not so correlated with each other to produce multicollinearity. This will avoid redundancy in the model.
 
 ## Assessment of Missingness
 
