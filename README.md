@@ -253,7 +253,7 @@ Because of this, **precision** is a good metric to optimize our model for. Aimin
 
 > The reason I am using 1 to represent a short recipe is due to the subtext of my project. Suppose you are using this model to decide what recipe to try with a limited amount of time. A "positive" will represent a recipe you *could* finish in a given period of time (which is fixed at 35 minutes in this project). A "negative" will mean that this recipe is not suitable for the limited time you have.
 
-> **Important:** The data was split 75:25 into train and test data, respectively. All models used the same training and test data to assure a consistent analysis of results.
+> **Important:** The data was split 75:25 into train and test data, respectively. All models used the same training and test data to assure a consistent analysis of results. Additionally, the response column, `length`, was transformed via default hyperparameters of the `LabelEncoder` prior to any train-test split. This is where the mapping `long => 0` and `short => 1` appears in the model.
 
 ## Baseline Model
 As stated earlier, a RandomForestClassifier was used to fit the baseline model. My baseline model had the following characteristics:
