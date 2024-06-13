@@ -69,6 +69,8 @@ Before beginning my analysis, I cleaned the data described earlier. The steps I 
 
 My cleaned DataFrame had 234429 rows and 25 columns after the above changes. The first few rows of the DataFrame are shown below. **Note:** Text columns, such as description, steps, and ingredients, were purposefully excluded from this visualization. This was done to preserve readability.
 
+<div style="overflow-x:auto;">
+
 | name                                 |   recipe_id |   minutes |   contributor_id | submitted   | tags                                                                                                                                                                                                                        |   n_steps |   n_ingredients |          user_id | date       |   rating |   avg_rating |   num_calories |   total_fat |   sugar |   sodium |   protein |   saturated_fat |   carbohydrates | length   |
 |:-------------------------------------|------------:|----------:|-----------------:|:------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------:|----------------:|-----------------:|:-----------|---------:|-------------:|---------------:|------------:|--------:|---------:|----------:|----------------:|----------------:|:---------|
 | 1 brownies in the world    best ever |      333281 |        40 |           985201 | 2008-10-27  | ['60-minutes-or-less', 'time-to-make', 'course', 'main-ingredient', 'preparation', 'for-large-groups', 'desserts', 'lunch', 'snacks', 'cookies-and-brownies', 'chocolate', 'bar-cookies', 'brownies', 'number-of-servings'] |        10 |               9 | 386585           | 2008-11-19 |        4 |            4 |          138.4 |          10 |      50 |        3 |         3 |              19 |               6 | long     |
@@ -76,6 +78,8 @@ My cleaned DataFrame had 234429 rows and 25 columns after the above changes. The
 | 412 broccoli casserole               |      306168 |        40 |            50969 | 2008-05-30  | ['60-minutes-or-less', 'time-to-make', 'course', 'main-ingredient', 'preparation', 'side-dishes', 'vegetables', 'easy', 'beginner-cook', 'broccoli']                                                                        |         6 |               9 |  29782           | 2008-12-31 |        5 |            5 |          194.8 |          20 |       6 |       32 |        22 |              36 |               3 | long     |
 | 412 broccoli casserole               |      306168 |        40 |            50969 | 2008-05-30  | ['60-minutes-or-less', 'time-to-make', 'course', 'main-ingredient', 'preparation', 'side-dishes', 'vegetables', 'easy', 'beginner-cook', 'broccoli']                                                                        |         6 |               9 |      1.19628e+06 | 2009-04-13 |        5 |            5 |          194.8 |          20 |       6 |       32 |        22 |              36 |               3 | long     |
 | 412 broccoli casserole               |      306168 |        40 |            50969 | 2008-05-30  | ['60-minutes-or-less', 'time-to-make', 'course', 'main-ingredient', 'preparation', 'side-dishes', 'vegetables', 'easy', 'beginner-cook', 'broccoli']                                                                        |         6 |               9 | 768828           | 2013-08-02 |        5 |            5 |          194.8 |          20 |       6 |       32 |        22 |              36 |               3 | long     |
+
+</div>
 
 ### Univariate Analysis
 
@@ -297,22 +301,15 @@ From the Interesting Aggregates, I found that long recipes had about 3-4 more st
 From my Bivariate Analysis, I found that there was a slight positive association between `n_steps` and `n_ingredients`. Logically, as number of ingredients increases, we would expect the recipe time to increase as well, since you need more time to prep all ingredients and incorporate them into a recipe. The *slight* association was good to avoid redundancy in the model and add nuance to edge cases. For example, in the event that a short recipe had many steps but few ingredients, the low number of ingredients could be used to reduce the influence of the high step count. In other words, adding this feature could help the model self-regulate. For the same reasons as `n_steps`, I decided to *remove* the `StandardScaler` from this column in the final model because a RandomForestClassifier does not benefit much from scaling numerical features. Removing this transformation would alleviate the computational workload of my model and not compromise precision or accuracy.
 
 #### `tags`
-I was curious if recipes labeled as "easy" could be good predictors of a short recipe. I split my dataset into recipes that *did* include "easy" tags and recipes that *did not* include "easy" tags. Then, I created two bar plots to compare frequencies of long and short recipes within each subgroup. The results are shown below:
+I was curious if recipes labeled as "easy" could be good predictors of a short recipe. I created a grouped bar plot to compare frequencies of easy and non-easy recipes for both long and short recipes. The results are shown below:
 <iframe
-  src="assets/easy_bar.html"
+  src="assets/easygroups.html"
   width="800"
   height="600"
   frameborder="0"
 ></iframe>
 
-<iframe
-  src="assets/noteasy_bar.html"
-  width="800"
-  height="600"
-  frameborder="0"
-></iframe>
-
-The plots suggested that easy recipes were more likely to be short (about 60% of the time) and that non-easy recipes were more likely to be long (also about 60% of the time). This indicated to me that a recipe being "easy" could be a good predictor of a short recipe. Similarly, a recipe without an "easy" tag could be a good predictor of a long recipe. I created a custom transformer `HasTagTransformer` that checked the `tag` column for the "easy" keyword specifically. The output was a nominal categorical feature in the form of a Boolean.
+The plots suggested that short recipes were more likely to be easy (about 70% of the time) and that long recipes were more likely to be non-easy (about 53% of the time). This indicated to me that a recipe being "easy" could be a good predictor of a short recipe. Similarly, a recipe without an "easy" tag could be a good predictor of a long recipe. I created a custom transformer `HasTagTransformer` that checked the `tag` column for the "easy" keyword specifically. The output was a nominal categorical feature in the form of a Boolean.
 
 #### `num_calories` and `sugar` 
 The justification for these features is similar in nature, so they will be discussed under the same header. From my Bivariate Analysis, I plotted two overlaid histograms of the calorie distributions for short and long recipes. I found that the shape of the distributions was different, with long recipes having a tendency to have more extreme calorie counts than short ones. This indicated that I could use calorie counts to distinguish a short recipe from a long one. Because the data was right-skewed, I decided to use a `QuantileTransformer` to adjust the distribution of values closer to a normal distribution. Higher quantiles of calories would likely correspond to longer recipes, and lower quantiles of calories would likely correspond to shorter recipes.
